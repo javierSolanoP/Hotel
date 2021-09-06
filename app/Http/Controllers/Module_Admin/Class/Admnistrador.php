@@ -2,7 +2,6 @@
 namespace App\Http\Controllers\Module_Admin\Class;
 use App\Http\Controllers\Require\AbstractClass\Usuario;
 use App\Http\Controllers\Require\Trait\MethodsUser;
-use App\Http\Controllers\Require\Trait\MethodsAdmin;
 use App\Http\Controllers\Require\Trait\MethodsConnect;
 
 class Administrador extends Usuario {
@@ -20,9 +19,6 @@ class Administrador extends Usuario {
 
     //Se importa los metodos de usuario: 
     use MethodsUser;
-
-    //Se importa los metodos administrativos comunes: 
-    use MethodsAdmin;
 
     //Metodo para registrar los datos basicos del Hotel en el sistema:
     public function registerHotelData()
