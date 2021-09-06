@@ -15,7 +15,7 @@ trait MethodsEncrypte {
 
         }else{
 
-            return ['encrypte' => false, 'Error' => 'Error de hash.'];
+            return ['encrypte' => false, 'Error' => 'Error de hash. '];
         }
 
     }
