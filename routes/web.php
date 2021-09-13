@@ -1,7 +1,8 @@
 <?php
 
+use App\Http\Controllers\Module_Client\Web\GoogleProviderController;
 use Illuminate\Support\Facades\Route;
-use Laravel\Socialite\Facades\Socialite;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -18,13 +19,10 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/auth/redirect', function () {
-    return Socialite::driver('google')->redirect();
-});
+Route::get('/auth/redirect', [GoogleProviderController::class,'index']);
 
-Route::get('/google-callback', function () {
-    $user = Socialite::driver('google')->user();
+Route::get('/google-callback', [GoogleProviderController::class,'store']);
 
-    $user;
-    $user->token;
+Route::get('/profile', function () {
+    return view('user-Profile');
 });

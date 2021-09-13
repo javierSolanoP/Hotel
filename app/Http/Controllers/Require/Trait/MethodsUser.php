@@ -159,7 +159,7 @@ trait MethodsUser {
 
         //Retornamos la respuesta:      
         try{
-            return array('register' => true, 'fields' => $valid);
+            return ['register' => true, 'fields' => $valid];
         }catch(Exception $e){
             return ['register' => false, 'Error' => $e->getMessage()];
         }

@@ -18,5 +18,6 @@ class Clientes extends Model
                            'email',
                            'password',
                            'telefono',
-                           'sesion'];
+                           'sesion',
+                           'avatar'];
 }

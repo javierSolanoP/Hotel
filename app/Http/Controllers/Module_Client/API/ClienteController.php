@@ -10,7 +10,6 @@ use Illuminate\Http\Request;
 
 class ClienteController extends Controller
 {
-    
     //Registrar cliente: 
     public function store(Request $request)
     {
@@ -63,11 +62,16 @@ class ClienteController extends Controller
                     if($response){
 
                         try{
+
                             $insert = $request->except(['form', 'password', 'confirmPassword']);
                             $insert['password'] = $response['fields']['password'];
                             $insert['sesion']   = 'Inactiva';
                             Clientes::create($insert);
+                            //Eliminamos el 'hash' de la password, por temas de seguirad:
+                            unset($response['fields']['password']);
+                            //Retornamos la respuesta: 
                             return $response;
+                            
                         }catch(Exception $e){
                             return ['register' => false, 'Error' => $e->getMessage()];
                         }
@@ -221,6 +225,44 @@ class ClienteController extends Controller
 
             break;
 
+            case $closeLogin:
+
+                $model = Clientes::where('email', '=', $request->input(key: 'email'));
+                
+                //Validamos que el usuario exista en la DB: 
+                $validate = $model->first();
+
+                if($validate){
+
+                    //Estado de sesion: 
+                    static $active = 'Activa'; 
+
+                    if($validate['sesion'] == $active){
+
+                        try{
+                            
+                            //Actualizamos la sesion a 'Inactiva': 
+                            $model->update(['sesion' => 'Inactiva']);
+                            //Retornamos la respuesta: 
+                            return ['closeLogin' => true];
+
+                        }catch(Exception $e){
+                            //Retornamos el error: 
+                            return ['closeLogin' => false, 'Error' => $e->getMessage()];
+                        }
+
+                    }else{
+                        //Retornamos el error: 
+                        return ['closeLogin' => false, 'Error' => 'El cliente no ha iniciado sesion en el sistema.'];
+                    }
+
+                }else{
+                    //Retornamos el error: 
+                    return ['closeLogin' => false, 'Error' =>'No existe en el sistema.'];
+                }
+
+            break;
+
             default: 
                 return ['Error' => 'Formulario no valido.'];
             break;
@@ -229,10 +271,25 @@ class ClienteController extends Controller
     }
 
     //Retorna la informacion del cliente solicitado: 
-    public function show($id)
+    public function show($email)
     {
-        //$getClient = Clientes::where('id_cliente', '=', $id)->first();
-        //return $getClient;
+        $model = Clientes::where('email', '=', $email)->first();
+
+        if($model){
+
+            try{
+                //Eliminamos el 'hash' de la password, por temas de seguirad:  
+                unset($model['password']);
+                //Retornamos la informacion del cliente: 
+                return $model;
+            }catch(Exception $e){
+                return ['Error' => $e->getMessage()];
+            }
+
+        }else{
+            //Retornamos el error: 
+            return ['Error' => 'No existe en el sistema'];
+        }
     }
 
     /**

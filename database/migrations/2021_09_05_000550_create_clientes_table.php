@@ -25,6 +25,7 @@ class CreateClientesTable extends Migration
             $table->string(column: 'password');
             $table->string(column: 'telefono');
             $table->string(column: 'sesion');
+            $table->string(column: 'avatar')->nullable();
             $table->timestamps();
         });
     }
