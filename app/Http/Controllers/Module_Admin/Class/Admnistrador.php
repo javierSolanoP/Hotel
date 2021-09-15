@@ -6,14 +6,14 @@ use App\Http\Controllers\Require\Trait\MethodsConnect;
 
 class Administrador extends Usuario {
 
-    public function __construct($nombre, $apellido, $email, $password, $confirmPassword)
+    public function __construct($nombre = '', 
+                                $apellido = '', 
+                                $email = '',
+                                $password = '', 
+                                $confirmPassword = '')
     {
 
-        parent::$nombre          = $nombre;
-        parent::$apellido        = $apellido;
-        parent::$email           = $email;
-        parent::$password        = $password;
-        parent::$confirmPassword = $confirmPassword;
+        parent::__construct($nombre,$apellido,$email,$password,$confirmPassword);
 
     }
 

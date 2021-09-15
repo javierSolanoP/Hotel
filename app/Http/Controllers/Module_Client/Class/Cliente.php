@@ -3,6 +3,7 @@ namespace App\Http\Controllers\Module_Client\Class;
 
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Require\AbstractClass\Usuario;
+use App\Http\Controllers\Require\Class\Validate;
 use App\Http\Controllers\Require\Trait\MethodsUser;
 use App\Http\Controllers\Require\Trait\MethodsConnect;
 use PharIo\Manifest\Email;
@@ -26,14 +27,26 @@ class Cliente extends Usuario {
     //Se importa los metodos de usuario: 
     use MethodsUser;
 
-    public function __toString()
+    public function __getEmail()
     {
-        return $this->password;
+        return $this->email;
     }
 
     //Realizar una valoracion de su experiencia de usuario en el 'Hotel':
-    public function makeQualification()
-    {}
+    public function makeQualification($qualification)
+    {
+
+        $validate = new Validate;
+
+        //Validamos que la calificacion ingresada, sea un tipo de dato numerico: 
+        if($validate->validateNumber($qualification)){
+            //Retornamos la respuesta:
+            return ['qualification' => true];
+        }else{
+            //Retornamos el error: 
+            return ['qualification' => false, 'Error' => 'No es un tipo de dato numerico.'];
+        }
+    }
 
     //Se importa los metodos de conexion: 
     use MethodsConnect;

@@ -3,13 +3,15 @@
 namespace App\Http\Controllers\Module_Admin\API;
 
 use App\Http\Controllers\Controller;
-use App\Http\Controllers\Module_Admin\Class\Administrador;
-use App\Models\Administradores;
+use App\Http\Controllers\Module_Admin\Class\Recepcionista;
+use App\Models\Recepcionista as ModelsRecepcionista;
+use App\Models\Recepcionistas;
 use Exception;
 use Illuminate\Http\Request;
 
-class AdministradorController extends Controller
+class RecepcionistaController extends Controller
 {
+
     //Tratamiento de las acciones basicas del Usuario:
     public function store(Request $request)
     {
@@ -18,16 +20,16 @@ class AdministradorController extends Controller
 
         //Tipos de formularios: 
 
-        //Formulario de registro de administrador:     
+        //Formulario de registro de recepcionista:     
         static $register        = 'register';
 
-        //Formulario de inicio de sesion de administrador: 
+        //Formulario de inicio de sesion de recepcionista: 
         static $login           = 'login';
 
-        //Formulario de restablecimiento de contrasenia, administrador: 
+        //Formulario de restablecimiento de contrasenia, recepcionista: 
         static $restorePassword = 'restorePassword';
 
-        //Formulario de cerrar sesion de administrador: 
+        //Formulario de cerrar sesion de recepcionista: 
         static $closeLogin      = 'closeLogin';
 
         //Distribuimos las instrucciones para cada formulario: 
@@ -35,7 +37,7 @@ class AdministradorController extends Controller
 
             case $register:
 
-                $model = Administradores::where('email', '=', $request->input(key: 'email'));
+                $model = Recepcionistas::where('email', '=', $request->input(key: 'email'));
 
                 //Validamos que el usuario no exista en la DB: 
                 $validate = $model->first();
@@ -43,7 +45,7 @@ class AdministradorController extends Controller
                 if (!$validate) {
 
                     //Instanciamos la clase 'Cliente' para procesar los datos: 
-                    $client = new Administrador(
+                    $client = new Recepcionista(
                         nombre: $request->input(key: 'nombre'),
                         apellido: $request->input(key: 'apellido'),
                         email: $request->input(key: 'email'),
@@ -63,7 +65,7 @@ class AdministradorController extends Controller
                             $insert = $request->except(['form', 'password', 'confirmPassword']);
                             $insert['password'] = $response['fields']['password'];
                             $insert['sesion']   = 'Inactiva';
-                            Administradores::create($insert);
+                            Recepcionistas::create($insert);
                             //Eliminamos el 'hash' de la password, por temas de seguirad:
                             unset($response['fields']['password']);
                             //Retornamos la respuesta: 
@@ -84,7 +86,7 @@ class AdministradorController extends Controller
 
             case $login:
 
-                $model = Administradores::where('email', '=', $request->input(key: 'email'));
+                $model = Recepcionistas::where('email', '=', $request->input(key: 'email'));
 
                 //Validamos que el usuario exista en la DB: 
                 $validate = $model->first();
@@ -98,7 +100,7 @@ class AdministradorController extends Controller
                         $confirmPassword = $validate['password'];
 
                         //Instanciamos la clase 'Cliente' para procesar los datos:
-                        $client = new Administrador(
+                        $client = new Recepcionista(
                             password: $request->input(key: 'password'),
                             confirmPassword: $confirmPassword
                         );
@@ -133,7 +135,7 @@ class AdministradorController extends Controller
 
             case $restorePassword:
 
-                $model = Administradores::where('email', '=', $request->input(key: 'email'));
+                $model = Recepcionistas::where('email', '=', $request->input(key: 'email'));
 
                 //Validamos que el usuario exista en la DB: 
                 $validate = $model->first();
@@ -144,7 +146,7 @@ class AdministradorController extends Controller
 
                 if ($validate) {
 
-                    $client = new Administrador(
+                    $client = new Recepcionista(
                         password: $request->input(key: 'newPassword'),
                         confirmPassword: $request->input(key: 'confirmPassword')
                     );
@@ -215,7 +217,7 @@ class AdministradorController extends Controller
 
             case $closeLogin:
 
-                $model = Administradores::where('email', '=', $request->input(key: 'email'));
+                $model = Recepcionistas::where('email', '=', $request->input(key: 'email'));
 
                 //Validamos que el usuario exista en la DB: 
                 $validate = $model->first();
@@ -254,11 +256,11 @@ class AdministradorController extends Controller
         }
     }
 
-    //Retorna la informacion del Administrador solicitado: 
+    //Retorna la informacion del cliente solicitado: 
     public function show($email)
     {
         //Validamos que el cliente exista en el DB: 
-        $model = Administradores::where('email', '=', $email)->first();
+        $model = Recepcionistas::where('email', '=', $email)->first();
 
         if ($model) {
 
@@ -276,10 +278,10 @@ class AdministradorController extends Controller
         }
     }
 
-    //Metodo para actualizar los datos del Administrador: 
+    //Metodo para actualizar los datos del Recepcionista: 
     public function update(Request $request)
     {
-        $model = Administradores::where('email', '=', $request->input(key: 'email'));
+        $model = Recepcionistas::where('email', '=', $request->input(key: 'email'));
 
         //Validamos que el usuario no exista en la DB: 
         $validate = $model->first();
@@ -287,7 +289,7 @@ class AdministradorController extends Controller
         if ($validate) {
 
             //Instanciamos la clase 'Cliente' para procesar los datos: 
-            $client = new Administrador(
+            $client = new Recepcionista(
                 password: $request->input(key: 'newPassword'),
                 confirmPassword: $request->input(key: 'confirmPassword')
             );
@@ -327,10 +329,10 @@ class AdministradorController extends Controller
 
     }
 
-    //Metodo para eliminar un administrador en especifico: 
+    //Metodo para eliminar un recepcionista en especifico: 
     public function destroy($email)
     {
-        $model = Administradores::where('email', '=', $email);
+        $model = Recepcionistas::where('email', '=', $email);
     
         //Validamos que el cliente exista en el DB: 
         $validate = $model->first();
@@ -338,9 +340,9 @@ class AdministradorController extends Controller
         if ($validate) {
     
             try {
-                //Eliminamos el Administrador de la DB:  
+                //Eliminamos el Recepcionista de la DB:  
                 $model->delete();
-                //Retornamos la informacion del administrador: 
+                //Retornamos la informacion del recepcionista: 
                 return ['Delete' => true];
             } catch (Exception $e) {
                 return ['Delete' => false, 'Error' => $e->getMessage()];

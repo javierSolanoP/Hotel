@@ -27,7 +27,7 @@ trait MethodsUser {
 
             $data = $_SESSION['registerData'];
 
-            if(isset($data->cedula)){
+            if(!empty($data->cedula)){
 
                 //Validamos el campo cedula: 
                 if($validate->validateNumber($data->cedula)){
@@ -40,7 +40,7 @@ trait MethodsUser {
                 }
             }
 
-            if(isset($data->nombre)){
+            if(!empty($data->nombre)){
                 
                 //Validamos el campo nombre: 
                 if($validate->validateString($data->nombre)){
@@ -53,7 +53,7 @@ trait MethodsUser {
                 }
             }
 
-            if(isset($data->apellido)){
+            if(!empty($data->apellido)){
                 
                  //Validamos el campo apellido: 
                 if($validate->validateString($data->apellido)){
@@ -66,7 +66,7 @@ trait MethodsUser {
                 }
             }
 
-            if(isset($data->genero)){
+            if(!empty($data->genero)){
                 
                  //Validamos el campo genero: 
                 if($validate->validateString($data->genero)){
@@ -80,7 +80,7 @@ trait MethodsUser {
             }
 
 
-            if(isset($data->edad)){
+            if(!empty($data->edad)){
                 
                  //Validamos el campo edad: 
                 if($validate->validateNumber($data->edad)){
@@ -93,7 +93,7 @@ trait MethodsUser {
                 }
             }
 
-            if(isset($data->fecha_nacimiento)){
+            if(!empty($data->fecha_nacimiento)){
                 
                 //Validamos el campo fecha_nacimiento: 
                 if($validate->validateNumber($data->fecha_nacimiento)){
@@ -106,7 +106,7 @@ trait MethodsUser {
                 }
             }
 
-            if(isset($data->email)){
+            if(!empty($data->email)){
                 
                 //Validamos el campo email: 
                 if($validate->validateEmail($data->email)){
@@ -119,7 +119,7 @@ trait MethodsUser {
                 }
             }
 
-            if(isset($data->password) && isset($data->confirmPassword)){
+            if(!empty($data->password) && !empty($data->confirmPassword)){
 
                 if($data->password == $data->confirmPassword){
 
@@ -142,7 +142,7 @@ trait MethodsUser {
                 }
             }
 
-            if(isset($data->telefono)){
+            if(!empty($data->telefono)){
                 
                 //Validamos el campo telefono: 
                 if($validate->validateNumber($data->telefono)){

@@ -40,7 +40,7 @@ trait MethodsValidate {
         if(isset($data)){
                 
             //Validamos el campo email: 
-            $pos = strpos($data, '@');
+            $pos = filter_var($data, FILTER_VALIDATE_EMAIL);
             if($pos){
 
                 return  true;

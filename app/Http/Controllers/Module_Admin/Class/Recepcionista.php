@@ -2,27 +2,23 @@
 namespace App\Http\Controllers\Module_Admin\Class;
 use App\Http\Controllers\Require\AbstractClass\Usuario;
 use App\Http\Controllers\Require\Trait\MethodsUser;
-use App\Http\Controllers\Require\Trait\MethodsAdmin;
 use App\Http\Controllers\Require\Trait\MethodsConnect;
 
 class Recepcionista extends Usuario {
 
-    public function __construct($nombre, $apellido, $email, $password, $confirmPassword)
+    public function __construct($nombre = '', 
+                                $apellido = '', 
+                                $email = '',
+                                $password = '', 
+                                $confirmPassword = '')
     {
 
-        parent::$nombre          = $nombre;
-        parent::$apellido        = $apellido;
-        parent::$email           = $email;
-        parent::$password        = $password;
-        parent::$confirmPassword = $confirmPassword;
+        parent::__construct($nombre,$apellido,$email,$password,$confirmPassword);
 
     }
 
     //Se importa los metodos de usuario: 
     use MethodsUser;
-
-    //Se importa los metodos administrativos comunes: 
-    use MethodsAdmin;
 
     //Metodo para realizar el 'Check-In':
     public function makeCheck_In()
