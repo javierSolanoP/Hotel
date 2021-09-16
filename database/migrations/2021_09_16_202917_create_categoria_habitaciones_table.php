@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateRecepcionistasTable extends Migration
+class CreateCategoriaHabitacionesTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,8 +13,9 @@ class CreateRecepcionistasTable extends Migration
      */
     public function up()
     {
-        Schema::create('recepcionistas', function (Blueprint $table) {
-            $table->id();
+        Schema::create('categoria_habitaciones', function (Blueprint $table) {
+            $table->id('id_categ_habitaciones');
+            $table->string(column: 'nombre_categoria', length: 20);
             $table->timestamps();
         });
     }
@@ -26,6 +27,6 @@ class CreateRecepcionistasTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('recepcionistas');
+        Schema::dropIfExists('categoria_habitaciones');
     }
 }
