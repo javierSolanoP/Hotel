@@ -5,7 +5,7 @@ trait MethodsValidate {
 
     public function validateString($data)
     {
-        if(isset($data)){
+        if(!empty($data)){
 
             if(!preg_match("/[0-9]/", $data)){
             
@@ -21,7 +21,7 @@ trait MethodsValidate {
 
     public function validateNumber($data)
     {
-        if(isset($data)){
+        if(!empty($data)){
 
             if(!preg_match("/[a-zA-Z]/", $data)){
             
@@ -37,7 +37,7 @@ trait MethodsValidate {
 
     public function validateEmail($data)
     {
-        if(isset($data)){
+        if(!empty($data)){
                 
             //Validamos el campo email: 
             $pos = filter_var($data, FILTER_VALIDATE_EMAIL);
@@ -55,7 +55,7 @@ trait MethodsValidate {
 
     public function validatePassword($password, $hash)
     {
-        if(isset($password) && isset($hash)){
+        if(!empty($password) && !empty($hash)){
 
             $verify = password_verify($password, $hash);
 

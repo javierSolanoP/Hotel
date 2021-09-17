@@ -5,7 +5,7 @@ use App\Http\Controllers\Require\Class\Validate;
 use App\Http\Controllers\Require\Trait\MethodsUser;
 use App\Http\Controllers\Require\Trait\MethodsConnect;
 
-class Usuarios {
+class Usuario {
 
     public function __construct(private $cedula = '', 
                                 private $nombre = '', 

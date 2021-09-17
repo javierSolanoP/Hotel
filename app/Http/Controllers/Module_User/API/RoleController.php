@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Module_User\API;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Module_User\Class\Permiso;
 use App\Models\Role;
 use Exception;
 use Illuminate\Http\Request;
@@ -64,12 +65,11 @@ class RoleController extends Controller
         //Validamos si ese role existe en la DB:
         if($model){
             //Retornamos el role solicitado:
-            return ['role' => $model];
+            return ['Query' => true, 'role' => $model];
         }else{
             //Retornamos el error:
-            return ['Error' => 'No existe en el sistema.'];
+            return ['Query' => false, 'Error' => 'No existe en el sistema.'];
         }
-
     }
 
     //Metodo para actualizar un role: 
@@ -77,21 +77,21 @@ class RoleController extends Controller
     {
         //En el caso de que el dato contenga caracteres de tipo mayuscula, los convertimos en minuscula. Asi seguimos una nomenclatura estandar: 
         $nombre_role     = strtolower($request->input(key: 'nombre_role'));
-        $new_nombre_role = strtolower($request->input(key: 'new_nombre_role'));
+        $new_nombre_permiso = strtolower($request->input(key: 'new_nombre_permiso'));
 
         //Hacemos la consulta en la DB: 
-        $model = Role::where('nombre_role', $nombre_role);
+        $modelRole = Role::where('nombre_role', $nombre_role);
 
         //Validamos que ese role exista en la DB:
-        $validate = $model->first();
+        $validateRole = $modelRole->first();
 
         //Si existe ese role, hacemos la actualizacion: 
-        if($validate){
+        if($validateRole){
 
             try{
 
                 //Hacemos la actualizacion en la DB:
-                $model->update(['nombre_role' => $new_nombre_role]);
+                $modelRole->update(['nombre_permiso' => $new_nombre_permiso]);
                 //Retornamos la respuesta:
                 return ['Register' => true];
 
@@ -118,11 +118,22 @@ class RoleController extends Controller
         $validate = $model->first();
 
         //Si existe ese role, hacemos la eliminacion: 
-        if($model){
+        if($validate){
 
             try{
 
-                //Hacemos la eliminacion del role en la DB:
+                //Instanciamos el controlador de la clase 'Permisos', para validar si existe un permiso para ese role: 
+                $permissionController = new PermisosController;
+
+                //Validamos si existe el permiso: 
+                $validatePermission = $permissionController->show($nombre_role);
+
+                if($validatePermission){
+                    //Realizamos la eliminacion del permiso en la DB: 
+                    $permissionController->destroy($nombre_role);
+                }
+               
+                //Realizamos la eliminacion del role en la DB:
                 $model->delete();
                 //Retornamos la respuesta:
                 return ['Delete' => true];

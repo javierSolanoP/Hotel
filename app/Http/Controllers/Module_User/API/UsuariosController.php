@@ -3,314 +3,131 @@
 namespace App\Http\controllers\Module_User\API;
 
 use App\Http\Controllers\Controller;
-use App\Http\Controllers\Module_User\Class\Usuarios;
+use App\Http\Controllers\Module_User\Class\Usuario;
 use App\Models\Usuarios as ModelsUsuarios;
 use Exception;
-use Illuminate\Http\Request;
 
 class UsuariosController extends Controller
 {
-    //Tratamiento de las acciones basicas del Usuario:
-    public function store(Request $request)
+    //Metodo para devolver todos los usuarios de la DB:
+    public function index()
     {
-        //Formulario de la peticion: 
-        $form = $request->input(key: 'form');
+        //Realizamos la consulta a la DB: 
+        $modelUsers = ModelsUsuarios::all();
 
-        //Tipos de formularios: 
+        //Eliminamos el 'hash' del campo password, por seguridad: 
+        foreach($modelUsers as $user){
+            unset($user['password']);
+        }
+        //Retoranamos la respuesta: 
+        return ['Users' => $modelUsers];
+    }
 
-        //Formulario de registro de cliente:     
-        static $register        = 'register';
+    //Metodo para registrar un nuevo Usuario:
+    public function store($email,
+                          $cedula,
+                          $nombre,
+                          $apellido,
+                          $genero,
+                          $edad,
+                          $fecha_nacimiento,
+                          $password,
+                          $confirmPassword,
+                          $telefono,
+                          $role)
+    {
+        $model = ModelsUsuarios::where('email', $email);
 
-        //Formulario de inicio de sesion de cliente: 
-        static $login           = 'login';
+        //Validamos que el usuario no exista en la DB: 
+        $validate = $model->first();
 
-        //Formulario de restablecimiento de contrasenia, cliente: 
-        static $restorePassword = 'restorePassword';
+        if (!$validate) {
 
-        //Formulario de cerrar sesion de cliente: 
-        static $closeLogin      = 'closeLogin';
+            //Instanciamos la clase 'Cliente' para procesar los datos: 
+            $client = new Usuario(
+                cedula: $cedula,
+                nombre: $nombre,
+                apellido: $apellido,
+                genero: $genero,
+                edad: $edad,
+                fecha_nacimiento: $fecha_nacimiento,
+                email: $email,
+                password: $password,
+                confirmPassword: $confirmPassword,
+                telefono: $telefono
+            );
 
-        //Formulario para registrar una calificacion de experiencia de cliente: 
-        static $qualification   = 'qualification';
+            //Almacenamos la instancia en una sesion para enviar los datos al trait 'MethodsUser': 
+            $_SESSION['registerData'] = $client;
 
-        //Distribuimos las instrucciones para cada formulario: 
-        switch ($form) {
+            $response = $client->registerData();
 
-            case $register:
+            if ($response) {
 
-                $model = ModelsUsuarios::where('email', '=', $request->input(key: 'email'));
+                try {
 
-                //Validamos que el usuario no exista en la DB: 
-                $validate = $model->first();
+                    //En el caso de que el role contenga caracteres de tipo mayuscula, los convertimos en minuscula. Asi seguimos una nomenclatura estandar: 
+                    $nombre_role = strtolower($role);
 
-                if (!$validate) {
+                    //Instanciamos la clase del controlador 'Role', para validar si existe el role: 
+                    $role = new RoleController;
+                    //Validamos si existe el role en la DB: 
+                    $validateRole = $role->show(role: $nombre_role);
 
-                    //Instanciamos la clase 'Cliente' para procesar los datos: 
-                    $client = new Usuarios(
-                        cedula: $request->input(key: 'cedula'),
-                        nombre: $request->input(key: 'nombre'),
-                        apellido: $request->input(key: 'apellido'),
-                        genero: $request->input(key: 'genero'),
-                        edad: $request->input(key: 'edad'),
-                        fecha_nacimiento: $request->input(key: 'fecha_nacimiento'),
-                        email: $request->input(key: 'email'),
-                        password: $request->input(key: 'password'),
-                        confirmPassword: $request->input(key: 'confirmPassword'),
-                        telefono: $request->input(key: 'telefono')
-                    );
-
-                    //Almacenamos la instancia en una sesion para enviar los datos al trait 'MethodsUser': 
-                    $_SESSION['registerData'] = $client;
-
-                    $response = $client->registerData();
-
-                    if ($response) {
-
-                        try {
-
-                            $insert = $request->except(['form', 'password', 'confirmPassword']);
-                            $insert['password'] = $response['fields']['password'];
-                            $insert['sesion']   = 'Inactiva';
-
-                            //Parseamos el role, por el 'id' del role que le corresponde:
-                            $id_role = match($request->input(key: 'role')){
-                                'Administrador' => 1,
-                                'Recepcionista' => 2,
-                                'Cliente'       => 3,
-                                default         => 'Role inválido'
-                            };
-
-                            if($id_role != 'Role inválido'){
-                                $insert['id_role'] = $id_role;
-                            }
-                            
-                            //Insrtamos el nuevo registro en la DB: 
-                            ModelsUsuarios::create($insert);
-                            //Eliminamos el 'hash' de la password, por temas de seguirad:
-                            unset($response['fields']['password']);
-                            //Retornamos la respuesta: 
-                            return $response;
-                        } catch (Exception $e) {
-                            return ['register' => false, 'Error' => $e->getMessage()];
-                        }
-                    } else {
-
-                        return $response;
-                    }
-                } else {
-
-                    return ['register' => false, 'Error' => 'Este cliente ya existe en el sistema.'];
-                }
-
-                break;
-
-            case $login:
-
-                $model = ModelsUsuarios::where('email', '=', $request->input(key: 'email'));
-
-                //Validamos que el usuario exista en la DB: 
-                $validate = $model->first();
-
-                if ($validate) {
-
-                    //Validamos que el usuario no tenga una sesion activa en el sistema: 
-                    if ($validate['sesion'] == 'Inactiva') {
-
-                        //Extraemos el 'hash' del cliente, para hacer la validacion: 
-                        $confirmPassword = $validate['password'];
-
-                        //Instanciamos la clase 'Cliente' para procesar los datos:
-                        $client = new Usuarios(
-                            password: $request->input(key: 'password'),
-                            confirmPassword: $confirmPassword
-                        );
-
-                        $_SESSION['login'] = $client;
-
-                        $response = $client->login();
-
-                        if ($response) {
-
-                            try {
-
-                                $login = $model->update(['sesion' => 'Activa']);
-                                return $response;
-                            } catch (Exception $e) {
-
-                                return ['login' => false, 'Error' => $e->getMessage()];
-                            }
-                        } elseif (!$response) {
-                            return $response;
-                        }
-                    } else {
-
-                        return ['login' => false, 'Error' => 'Tiene la sesion activa.'];
-                    }
-                } else {
-
-                    return ['login' => false, 'Error' => 'No existe en el sistema.'];
-                }
-
-                break;
-
-            case $restorePassword:
-
-                $model = ModelsUsuarios::where('email', '=', $request->input(key: 'email'));
-
-                //Validamos que el usuario exista en la DB: 
-                $validate = $model->first();
-
-                //Estado de sesiones: 
-                static $inactive = 'Inactiva';
-                static $pending  = 'Pendiente';
-
-                if ($validate) {
-
-                    $client = new Usuarios(
-                        password: $request->input(key: 'newPassword'),
-                        confirmPassword: $request->input(key: 'confirmPassword')
-                    );
-
-                    $response = $client->restorePassword(
-                        url: $request->input(key: 'url'),
-                        user: $validate['email'],
-                        updated_at: $validate['updated_at'],
-                        sessionStatus: $validate['sesion'],
-                        newPassword: $request->input(key: 'newPassword')
-                    );
-
-                    if ($validate['sesion'] == $inactive) {
-
-                        if ($response) {
-
-                            try {
-
-                                //Cambiamos el estado de la sesion: 
-                                $model->update(['sesion' => 'Pendiente']);
-                                //Retornamos la respuesta: 
-                                return $response;
-                            } catch (Exception $e) {
-                                //Retornamos el error: 
-                                return ['restorePassword' => false, 'Error' => $e->getMessage()];
-                            }
-                        } else {
-                            //Retornamos el error:
-                            return $response;
-                        }
-                    } elseif ($validate['sesion'] == $pending) {
-
-                        if ($response['restorePassword']) {
-
-                            try {
-
-                                //Actualizamos el estado de la sesion y la nueva contrasenia del usuario: 
-                                $model->update(['sesion' => $inactive, 'password' => $response['newPassword']]);
-                                //Retornamos la respuesta: 
-                                return $response;
-                            } catch (Exception $e) {
-                                //Retornamos el error: 
-                                return ['restorePassword' => false, 'Error' => $e->getMessage()];
-                            }
-                        } else {
-
-                            try {
-
-                                //Actualizamos el estado de la sesion: 
-                                $model->update(['sesion' => $inactive]);
-                                //Retornamos el error: 
-                                return $response;
-                            } catch (Exception $e) {
-                                //Retornamos el error: 
-                                return ['restorePassword' => false, 'Error' => $e->getMessage()];
-                            }
-                        }
-                    } else {
-                        //Retornamos el error:
-                        return $response;
-                    }
-                } else {
-                    //Retornamos el error: 
-                    return ['restorePassword' => false, 'Error' => 'No existe en el sistema.'];
-                }
-
-                break;
-
-            case $closeLogin:
-
-                $model = ModelsUsuarios::where('email', '=', $request->input(key: 'email'));
-
-                //Validamos que el usuario exista en la DB: 
-                $validate = $model->first();
-
-                if ($validate) {
-
-                    //Estado de sesion: 
-                    static $active = 'Activa';
-
-                    if ($validate['sesion'] == $active) {
-
-                        try {
-
-                            //Actualizamos la sesion a 'Inactiva': 
-                            $model->update(['sesion' => 'Inactiva']);
-                            //Retornamos la respuesta: 
-                            return ['closeLogin' => true];
-                        } catch (Exception $e) {
-                            //Retornamos el error: 
-                            return ['closeLogin' => false, 'Error' => $e->getMessage()];
-                        }
+                    //Si existe, extraemos su 'id': 
+                    if ($validateRole['Query']) {
+                        //Extraemos su 'id' y se lo asignamos a la variable: 
+                        $id_role = $validateRole['role']['id_role'];
                     } else {
                         //Retornamos el error: 
-                        return ['closeLogin' => false, 'Error' => 'El cliente no ha iniciado sesion en el sistema.'];
+                        return ['Register' => false, 'Error' => 'No existe ese role en el sistema.'];
                     }
-                } else {
+
+                    //Asignamos el 'hash' generado de la password en la variable: 
+                    $hashPassword = $response['fields']['password'];
+
+                    //Asignamos un estado de sesion por defecto como 'Inactiva': 
+                    static $session = 'Inactiva';
+
+                    //Insrtamos el nuevo registro en la DB: 
+                    ModelsUsuarios::create(['cedula'           => $cedula,
+                                            'nombre'           => $nombre,
+                                            'apellido'         => $apellido,
+                                            'genero'           => $genero,
+                                            'edad'             => $edad,
+                                            'fecha_nacimiento' => $fecha_nacimiento,
+                                            'email'            => $email,
+                                            'password'         => $hashPassword,
+                                            'telefono'         => $telefono,
+                                            'sesion'           => $session,
+                                            'id_role'          => $id_role]);
+
+                    //Eliminamos el 'hash' de la password, por temas de seguridad:
+                    unset($response['fields']['password']);
+                    //Retornamos la respuesta: 
+                    return $response;
+
+                } catch (Exception $e) {
                     //Retornamos el error: 
-                    return ['closeLogin' => false, 'Error' => 'No existe en el sistema.'];
+                    return ['register' => false, 'Error' => $e->getMessage()];
                 }
-
-                break;
-
-            case $qualification:
-
-                //Validamos que el cliente exista en el sistema: 
-                $validate = ModelsUsuarios::where('email', $request->input(key: 'email'))->first();
-
-                if ($validate) {
-
-                    try {
-
-                        $client = new Usuarios;
-
-                        //Validamos la calificacion ingresada: 
-                        $response = $client->makeQualification(qualification: $request->input(key: 'qualification'));
-
-                        if ($response) {
-
-                            //Registramos la calificacion en la DB: 
-                        }
-                    } catch (Exception $e) {
-                        //Retornamos el error: 
-                        return ['Error' => $e->getMessage()];
-                    }
-                } else {
-                    //Retornamos el error: 
-                    return ['Error' => 'No existe en el sistema.'];
-                }
-
-                break;
-
-            default:
-                return ['Error' => 'Formulario no valido.'];
-                break;
+            } else {
+                //Retornamos el error en el caso de un tipo de dato no permitido: 
+                return $response;
+            }
+        } else {
+            //Retornamos el error: 
+            return ['register' => false, 'Error' => 'Este cliente ya existe en el sistema.'];
         }
     }
 
-    //Retorna la informacion del cliente solicitado: 
+    //Metodo para retornar la informacion del cliente solicitado: 
     public function show($email)
     {
-        //Validamos que el cliente exista en el DB: 
-        $model = ModelsUsuarios::where('email', '=', $email)->first();
+        //Realizamos la consulta en la DB: 
+        $model = ModelsUsuarios::where('email', $email)->first();
 
+        //Validamos que exista el usuario: 
         if ($model) {
 
             try {
@@ -328,9 +145,9 @@ class UsuariosController extends Controller
     }
 
     //Metodo para actualizar los datos del Cliente: 
-    public function update(Request $request)
+    public function update($email, $newPassword, $confirmPassword, $telefono, $role)
     {
-        $model = ModelsUsuarios::where('email', '=', $request->input(key: 'email'));
+        $model = ModelsUsuarios::where('email', $email);
 
         //Validamos que el usuario no exista en la DB: 
         $validate = $model->first();
@@ -338,10 +155,10 @@ class UsuariosController extends Controller
         if ($validate) {
 
             //Instanciamos la clase 'Cliente' para procesar los datos: 
-            $client = new Usuarios(
-                password: $request->input(key: 'newPassword'),
-                confirmPassword: $request->input(key: 'confirmPassword'),
-                telefono: $request->input(key: 'telefono')
+            $client = new Usuario(
+                password: $newPassword,
+                confirmPassword: $confirmPassword,
+                telefono: $telefono
             );
 
             //Almacenamos la instancia en una sesion para enviar los datos al trait 'MethodsUser': 
@@ -353,18 +170,34 @@ class UsuariosController extends Controller
 
                 try {
 
-                    $insert = $request->except(['newPassword', 'confirmPassword']);
-                    $insert['newPassword'] = $response['fields']['password'];
-                    $insert['sesion']   = 'Inactiva';
+                    //En el caso de que el role contenga caracteres de tipo mayuscula, los convertimos en minuscula. Asi seguimos una nomenclatura estandar: 
+                    $nombre_role = strtolower($role);
 
-                    //Realizamos la actualizacion en la DB: 
-                    $model->update(['password' => $insert['newPassword'],
-                                    'telefono' => $insert['telefono']]);
+                    //Instanciamos la clase del controlador 'Role', para validar si existe el role: 
+                    $role = new RoleController;
+                    //Validamos si existe el role en la DB: 
+                    $validateRole = $role->show(role: $nombre_role);
 
-                    //Eliminamos el 'hash' de la password, por temas de seguirad:
-                    unset($response['fields']['password']);
-                    //Retornamos la respuesta: 
-                    return $response;
+                    //Si existe, realizamos la actualizacion: 
+                    if ($validateRole['Query']) {
+
+                        //Asignamos el nuevo 'hash', a la variable 'password': 
+                        $password = $response['fields']['password'];
+
+                        //Realizamos la actualizacion en la DB: 
+                        $model->update([
+                            'password' => $password,
+                            'telefono' => $telefono
+                        ]);
+
+                        //Eliminamos el 'hash' de la password, por temas de seguirad:
+                        unset($response['fields']['password']);
+                        //Retornamos la respuesta: 
+                        return $response;
+                    } else {
+                        //Retornamos el error: 
+                        return ['Register' => false, 'Error' => 'No existe ese role en el sistema.'];
+                    }
                 } catch (Exception $e) {
                     return ['register' => false, 'Error' => $e->getMessage()];
                 }
@@ -374,25 +207,24 @@ class UsuariosController extends Controller
             }
         } else {
 
-            return ['register' => false, 'Error' => 'No existe en el sistema.'];
+            return ['register' => false, 'Error' => 'No existe ese usuario en el sistema.'];
         }
-
     }
 
-    //Metodo para eliminar un cliente en especifico: 
+    //Metodo para eliminar un usuario en especifico: 
     public function destroy($email)
     {
         $model = ModelsUsuarios::where('email', '=', $email);
 
-        //Validamos que el cliente exista en el DB: 
+        //Validamos que el usuario exista en el DB: 
         $validate = $model->first();
 
         if ($validate) {
 
             try {
-                //Eliminamos el Cliente de la DB:  
+                //Eliminamos el usuario de la DB:  
                 $model->delete();
-                //Retornamos la informacion del cliente: 
+                //Retornamos la informacion del usuario: 
                 return ['Delete' => true];
             } catch (Exception $e) {
                 return ['Delete' => false, 'Error' => $e->getMessage()];
