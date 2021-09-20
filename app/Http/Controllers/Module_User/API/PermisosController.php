@@ -21,12 +21,12 @@ class PermisosController extends Controller
     }
 
     //Metodo para registrar nuevos permisos: 
-    public function store(Request $request)
+    public function store($nombre_role, $permiso)
     {
         //Instanciamos la clase el controlador 'Role', para validar si existe el role: 
         $role = new RoleController;
         //Validamos si existe el role en la DB: 
-        $validateRole = $role->show($request->input(key: 'nombre_role'));
+        $validateRole = $role->show($nombre_role);
 
         //Si existe, extraemos su 'id': 
         if($validateRole['Query']){
@@ -46,7 +46,7 @@ class PermisosController extends Controller
                 if(!$validatePermissions){
 
                     //En el caso de que el dato contenga caracteres de tipo mayuscula, los convertimos en minuscula. Asi seguimos una nomenclatura estandar: 
-                    $nombre_permiso = strtolower($request->input(key: 'nombre_permiso'));
+                    $nombre_permiso = strtolower($permiso);
 
                     //Instanciamos la clase 'Permiso', para validar los datos recibidos: 
                     $permission = new Permiso;
@@ -115,17 +115,17 @@ class PermisosController extends Controller
             }
         }else{
             //Retornamos el error: 
-            return ['Query' => false, 'Error' => 'No existe ese role en el sistema.'];
+            return ['Query' => false, 'Error' => $validateRole['Error']];
         }
     }
 
     //Metodo para actualizar un permiso:
-    public function update(Request $request)
+    public function update($nombre_role, $new_permiso)
     {
        //Instanciamos la clase del controlador 'Role', para validar si existe el role: 
        $role = new RoleController;
        //Validamos si existe el role en la DB: 
-       $validateRole = $role->show($request->input(key: 'nombre_role'));
+       $validateRole = $role->show($nombre_role);
 
        //Si existe, extraemos su 'id': 
        if($validateRole['Query']){
@@ -147,7 +147,7 @@ class PermisosController extends Controller
                    try{
 
                        //En el caso de que el dato contenga caracteres de tipo mayuscula, los convertimos en minuscula. Asi seguimos una nomenclatura estandar: 
-                       $new_nombre_permiso = strtolower($request->input(key: 'new_nombre_permiso'));
+                       $new_nombre_permiso = strtolower($new_permiso);
 
                        //Instanciamos la clase 'Permiso', para validar los datos recibidos: 
                        $permission = new Permiso;
@@ -185,7 +185,7 @@ class PermisosController extends Controller
            }
        }else{
            //Retornamos el error: 
-           return ['Register' => false, 'Error' => 'No existe ese role'];
+           return ['Register' => false, 'Error' => $validateRole['Error']];
        }
    
     }

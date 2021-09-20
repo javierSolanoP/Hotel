@@ -7,7 +7,7 @@
     <title>Document</title>
 </head>
 <body>
-    <img src="{{$avatar}}">
-    <a href="{{$avatar}}">Avatar</a>
+    <img src="{{$user->avatar}}">
+    <p>{{$user->name}} XD</p>
 </body>
 </html>

@@ -11,28 +11,8 @@ use Illuminate\Http\Request;
 
 class LoginController extends Controller
 {
-    public function index()
-    {
-        $userController = new UsuariosController;
-        return $userController->store(email: 'jmspfh@gmail.com', 
-                                     cedula: "16546687",
-                                     nombre: "JAVIER",
-                                     apellido: "SOLANO",
-                                     genero: "MASCULINO",
-                                     edad: "19",
-                                     fecha_nacimiento: "2002-01-08",
-                                     password: "12345JAVIERSOLAN",
-                                     confirmPassword: "12345JAVIERSOLANO",
-                                     telefono: "3245897845",
-                                     role: "cliente");
-    }
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
+    //Metodo para procesar las peticiones recibidas por 'HTTP': 
     public function store(Request $request)
     {
         //Formulario de la peticion: 
@@ -49,68 +29,57 @@ class LoginController extends Controller
         //Formulario de cerrar sesion de cliente: 
         static $closeLogin      = 'closeLogin';
 
+        //Instanciamos el controlador de la clase 'Usuarios', para validar la existencia del usuario y actualizar sus estados de sesion y contrasenia: 
+        $usersController = new UsuariosController;
+        //Validamos que exista el usuario en la DB: 
+        $validateUser = $usersController->show(email: $request->input(key: 'email'));
+
         switch($form){
 
             case $login: 
 
-                $model = Usuarios::where('email', '=', $request->input(key: 'email'));
+               //Si existe, extraemos su estado de sesion actual: 
+               if($validateUser['Query']){
 
-                //Validamos que el usuario exista en la DB: 
-                $validate = $model->first();
+                    //Estado de sesion: 
+                    //-----------------
+                    //Sesion inactiva: 
+                    static $inactive = 'Inactiva';
+                    //Sesion activa: 
+                    static $active   = 'Activa';
+                    //Sesion pendiente: 
+                    static $pending  = 'Pendiente';
 
-                if ($validate) {
+                    if($validateUser['User']['sesion'] == $inactive){
 
-                    //Validamos que el usuario no tenga una sesion activa en el sistema: 
-                    if ($validate['sesion'] == 'Inactiva') {
+                        //Realizamos la actualizacion del estado de la sesion: 
+                        $usersController->updateSession(email: $request->input(key: 'email'),
+                                                        session: $active);
 
-                        //Extraemos el 'hash' del cliente, para hacer la validacion: 
-                        $confirmPassword = $validate['password'];
+                        //Realizamos una nueva consulta al controlador de 'Usuarios', para cargar el nuevo estado de sesion: 
+                        $user = $usersController->show(email: $request->input(key: 'email'));
+                        //Retornamos la respuesta: 
+                        return ['Login' => true, 'User' => $user['User']];
 
-                        //Instanciamos la clase 'Cliente' para procesar los datos:
-                        $client = new Usuario(
-                            password: $request->input(key: 'password'),
-                            confirmPassword: $confirmPassword
-                        );
-
-                        $_SESSION['login'] = $client;
-
-                        $response = $client->login();
-
-                        if ($response) {
-
-                            try {
-
-                                $login = $model->update(['sesion' => 'Activa']);
-                                return $response;
-                            } catch (Exception $e) {
-
-                                return ['login' => false, 'Error' => $e->getMessage()];
-                            }
-                        } elseif (!$response) {
-                            return $response;
-                        }
-                    } else {
-
-                        return ['login' => false, 'Error' => 'Tiene la sesion activa.'];
+                    }elseif($validateUser['User']['sesion'] == $active){
+                        //Retornamos el error: 
+                        return ['Login' => false, 'Error' => 'Este usuario ya inicio sesion en el sistema.'];
+                    
+                    }elseif($validateUser['User']['sesion'] == $pending){
+                        //Retornamos el error: 
+                        return ['Login' => false, 'Error' => 'Este usuario solicitó un restablecimiento de contraseña.'];
                     }
-                } else {
-
-                    return ['login' => false, 'Error' => 'No existe en el sistema.'];
-                }
+                  
+               }else{
+                   //Retornamos el error: 
+                   return ['Login' => false, 'Error' => 'No existe ese usuario en el sistema.'];
+               }
                 break;
 
             case $restorePassword: 
 
-                $model = Usuarios::where('email', '=', $request->input(key: 'email'));
-
-                //Validamos que el usuario exista en la DB: 
-                $validate = $model->first();
-
-                //Estado de sesiones: 
-                static $inactive = 'Inactiva';
-                static $pending  = 'Pendiente';
-
-                if ($validate) {
+                //Si existe, extraemos su estado de sesion actual: 
+                if($validateUser['Query']){
 
                     $client = new Usuario(
                         password: $request->input(key: 'newPassword'),
@@ -119,20 +88,30 @@ class LoginController extends Controller
 
                     $response = $client->restorePassword(
                         url: $request->input(key: 'url'),
-                        user: $validate['email'],
-                        updated_at: $validate['updated_at'],
-                        sessionStatus: $validate['sesion'],
+                        user: $validateUser['User']['email'],
+                        updated_at: $validateUser['User']['updated_at'],
+                        sessionStatus: $validateUser['User']['sesion'],
                         newPassword: $request->input(key: 'newPassword')
                     );
 
-                    if ($validate['sesion'] == $inactive) {
+                    //Estado de sesion: 
+                    //-----------------
+                    //Sesion inactiva: 
+                    static $inactive = 'Inactiva';
+                    //Sesion activa: 
+                    static $active   = 'Activa';
+                    //Sesion pendiente: 
+                    static $pending  = 'Pendiente';
+
+                    if ($validateUser['User']['sesion'] == $inactive) {
 
                         if ($response) {
 
                             try {
 
-                                //Cambiamos el estado de la sesion: 
-                                $model->update(['sesion' => 'Pendiente']);
+                                //Realizamos la actualizacion del estado de la sesion: 
+                                $usersController->updateSession(email: $request->input(key: 'email'),
+                                                                session: $pending);
                                 //Retornamos la respuesta: 
                                 return $response;
                             } catch (Exception $e) {
@@ -143,14 +122,16 @@ class LoginController extends Controller
                             //Retornamos el error:
                             return $response;
                         }
-                    } elseif ($validate['sesion'] == $pending) {
+                    } elseif ($validateUser['User']['sesion'] == $pending) {
 
                         if ($response['restorePassword']) {
 
                             try {
 
-                                //Actualizamos el estado de la sesion y la nueva contrasenia del usuario: 
-                                $model->update(['sesion' => $inactive, 'password' => $response['newPassword']]);
+                                //Realizamos la actualizacion del estado de la sesion: 
+                                $usersController->restorePassword(email: $request->input(key: 'email'),
+                                                                  session: $inactive, 
+                                                                  newPassword: $response['newPassword']);
                                 //Retornamos la respuesta: 
                                 return $response;
                             } catch (Exception $e) {
@@ -161,8 +142,9 @@ class LoginController extends Controller
 
                             try {
 
-                                //Actualizamos el estado de la sesion: 
-                                $model->update(['sesion' => $inactive]);
+                                //Realizamos la actualizacion del estado de la sesion: 
+                                $usersController->updateSession(email: $request->input(key: 'email'),
+                                                                session: $inactive);
                                 //Retornamos el error: 
                                 return $response;
                             } catch (Exception $e) {
@@ -174,30 +156,35 @@ class LoginController extends Controller
                         //Retornamos el error:
                         return $response;
                     }
-                } else {
+                }else{
                     //Retornamos el error: 
-                    return ['restorePassword' => false, 'Error' => 'No existe en el sistema.'];
+                    return ['Login' => false, 'Error' => 'No existe ese usuario en el sistema.'];
                 }
                 break;
 
             case $closeLogin: 
 
-                $model = Usuarios::where('email', '=', $request->input(key: 'email'));
+                $model = Usuarios::where('email', $request->input(key: 'email'));
 
                 //Validamos que el usuario exista en la DB: 
                 $validate = $model->first();
 
                 if ($validate) {
 
-                    //Estado de sesion: 
-                    static $active = 'Activa';
+                     //Estado de sesion: 
+                    //-----------------
+                    //Sesion activa: 
+                    static $active   = 'Activa';
+                    //Sesion inactiva: 
+                    static $inactive = 'Inactiva';      
 
                     if ($validate['sesion'] == $active) {
 
                         try {
 
-                            //Actualizamos la sesion a 'Inactiva': 
-                            $model->update(['sesion' => 'Inactiva']);
+                            //Realizamos la actualizacion del estado de la sesion: 
+                            $usersController->updateSession(email: $request->input(key: 'email'),
+                                                            session: $inactive);
                             //Retornamos la respuesta: 
                             return ['closeLogin' => true];
                         } catch (Exception $e) {
@@ -218,39 +205,5 @@ class LoginController extends Controller
                 return ['Error' => 'Formulario no valido.'];
                 break;
         }
-    }
-
-    /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function show($id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy($id)
-    {
-        //
     }
 }

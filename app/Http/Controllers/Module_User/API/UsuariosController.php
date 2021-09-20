@@ -15,12 +15,20 @@ class UsuariosController extends Controller
         //Realizamos la consulta a la DB: 
         $modelUsers = ModelsUsuarios::all();
 
-        //Eliminamos el 'hash' del campo password, por seguridad: 
-        foreach($modelUsers as $user){
-            unset($user['password']);
+        //Si existen registros de usuarios en la DB, los retornamos: 
+        if($modelUsers){
+            
+            //Eliminamos el 'hash' del campo password, por seguridad: 
+            foreach($modelUsers as $user){
+                unset($user['password']);
+            }
+
+            //Retoranamos la respuesta: 
+            return ['Query' => true, 'Users' => $modelUsers];
+        }else{
+            //Retornamos el error: 
+            return ['Query' => false, 'Error' => 'No existen usuarios en el sistema.'];
         }
-        //Retoranamos la respuesta: 
-        return ['Users' => $modelUsers];
     }
 
     //Metodo para registrar un nuevo Usuario:
@@ -80,7 +88,7 @@ class UsuariosController extends Controller
                         $id_role = $validateRole['role']['id_role'];
                     } else {
                         //Retornamos el error: 
-                        return ['Register' => false, 'Error' => 'No existe ese role en el sistema.'];
+                        return ['Register' => false, 'Error' => $validateRole['Error']];
                     }
 
                     //Asignamos el 'hash' generado de la password en la variable: 
@@ -121,7 +129,7 @@ class UsuariosController extends Controller
         }
     }
 
-    //Metodo para retornar la informacion del cliente solicitado: 
+    //Metodo para retornar la informacion del usuario solicitado: 
     public function show($email)
     {
         //Realizamos la consulta en la DB: 
@@ -134,24 +142,27 @@ class UsuariosController extends Controller
                 //Eliminamos el 'hash' de la password, por temas de seguridad:  
                 unset($model['password']);
                 //Retornamos la informacion del cliente: 
-                return $model;
+                return ['Query' => true, 'User' => $model];
             } catch (Exception $e) {
-                return ['Error' => $e->getMessage()];
+                //Retornamos el error:
+                return ['Query' => false, 'Error' => $e->getMessage()];
             }
         } else {
             //Retornamos el error: 
-            return ['Error' => 'No existe en el sistema'];
+            return ['Query' => false, 'Error' => 'No existe ese usuario en el sistema'];
         }
     }
 
-    //Metodo para actualizar los datos del Cliente: 
+    //Metodo para actualizar los datos del Usuario: 
     public function update($email, $newPassword, $confirmPassword, $telefono, $role)
     {
+        //Realizamos la consulta a la DB: 
         $model = ModelsUsuarios::where('email', $email);
 
-        //Validamos que el usuario no exista en la DB: 
+        //Validamos que el usuario exista en la DB: 
         $validate = $model->first();
 
+        //Si existe, realizamos la actualizacion: 
         if ($validate) {
 
             //Instanciamos la clase 'Cliente' para procesar los datos: 
@@ -196,29 +207,115 @@ class UsuariosController extends Controller
                         return $response;
                     } else {
                         //Retornamos el error: 
-                        return ['Register' => false, 'Error' => 'No existe ese role en el sistema.'];
+                        return ['Register' => false, 'Error' => $validateRole['Error']];
                     }
                 } catch (Exception $e) {
+                    //Retornamos el error:
                     return ['register' => false, 'Error' => $e->getMessage()];
                 }
             } else {
-
+                //Retornamos el error en el caso de un tipo de dato no permitido: 
                 return $response;
             }
         } else {
-
+            //Retornamos el error:
             return ['register' => false, 'Error' => 'No existe ese usuario en el sistema.'];
+        }
+    }
+
+    //Metodo para actualizar el estado de sesion del usuario: 
+    public function updateSession($email, $session)
+    {
+        //Realizamos la consulta a la DB: 
+        $modelUsers = ModelsUsuarios::where('email', $email);
+
+        //Validamos que exista ese usuario en la DB:
+        $validateUser = $modelUsers->first();
+        
+        //Si existe, actualizamos el estado de la sesion: 
+        if($validateUser){
+
+            try{
+
+                //Realizamos la actualizacion: 
+                $modelUsers->update(['sesion' => $session]);
+                //Retornamos la respuesta: 
+                return ['register' => true];
+
+            } catch (Exception $e) {
+                //Retornamos el error:
+                return ['register' => false, 'Error' => $e->getMessage()];
+            }
+        }else{
+            //Retornamos el error:
+            return ['register' => false, 'Error' => 'No existe ese usuario en el sistema.'];
+        }
+    }
+
+    //Metodo para restablecer la password del usuario: 
+    public function restorePassword($email, $session, $newPassword)
+    {
+        //Realizamos la consulta a la DB: 
+        $model = ModelsUsuarios::where('email', $email);
+
+        //Validamos que el usuario exista en el DB: 
+        $validate = $model->first();
+
+        //Si existe, realizamos la actualizacion del usuario:
+        if ($validate) {
+
+            try{
+                //Realizamos la actualizacion del estado de sesion y cambiamos la password: 
+                $model->update(['sesion' => $session, 'password' => $newPassword]);
+                //Retornamos la respuesta: 
+                return ['Register' => true];
+            }catch(Exception $e){
+                //Retornamos el error: 
+                return ['Register' => false, 'Error' => $e->getMessage()];
+            }
+        }else{
+            //Retornamos el error: 
+            return ['Register' => false, 'Error' => 'No existe ese usuario en el sistema.'];
+        }
+    }
+
+    //Metodo para asignar URL de su avatar: 
+    public function addAvatar($email, $url)
+    {
+        //Realizamos la consulta a la DB: 
+        $model = ModelsUsuarios::where('email', $email);
+
+        //Validamos si existe ese usuario en la DB:
+        $validateUser = $model->first();
+
+        //Si existe, actualizamos su campo 'avatar' con la direccion url: 
+        if($validateUser){
+
+            try{
+                //Realizamos la actualizacion: 
+                $model->update(['avatar' => $url]);
+                //Retornamos la respuesta: 
+                return ['Register' => true];
+            } catch (Exception $e) {
+                //Retornamos el error:
+                return ['Register' => false, 'Error' => $e->getMessage()];
+            }
+        }else{
+            //Retornamos el error:
+            return ['Register' => false, 'Error' => 'No existe ese usuario en el sistema.'];
         }
     }
 
     //Metodo para eliminar un usuario en especifico: 
     public function destroy($email)
     {
-        $model = ModelsUsuarios::where('email', '=', $email);
+        //Realizamos la consulta a la DB: 
+        $model = ModelsUsuarios::where('email', $email);
 
         //Validamos que el usuario exista en el DB: 
         $validate = $model->first();
 
+        //Si existe, realizamos la eliminacion del usuario:
         if ($validate) {
 
             try {
@@ -227,6 +324,7 @@ class UsuariosController extends Controller
                 //Retornamos la informacion del usuario: 
                 return ['Delete' => true];
             } catch (Exception $e) {
+                //Retornamos el error:
                 return ['Delete' => false, 'Error' => $e->getMessage()];
             }
         } else {

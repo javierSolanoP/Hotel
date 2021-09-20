@@ -1,8 +1,8 @@
 <?php
 
-use App\Http\Controllers\Module_Client\Web\GoogleProviderController;
+use App\Http\Controllers\Module_User\API\GoogleProviderController;
 use Illuminate\Support\Facades\Route;
-
+use Laravel\Socialite\Two\GoogleProvider;
 
 /*
 |--------------------------------------------------------------------------
@@ -19,9 +19,13 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/auth/redirect', [GoogleProviderController::class,'index']);
+Route::get('/auth-redirect/{url}/{urlFail}', [GoogleProviderController::class, 'redirect']);
 
-Route::get('/google-callback', [GoogleProviderController::class,'store']);
+Route::get('/google-callback', [GoogleProviderController::class,'receive']);
+
+Route::get('/fail-auth', function () {
+    return view('error');
+});
 
 Route::get('/profile', function () {
     return view('user-Profile');

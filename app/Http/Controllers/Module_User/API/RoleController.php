@@ -39,6 +39,12 @@ class RoleController extends Controller
 
                 //Registramos el nuevo 'role' en la DB: 
                 Role::create(['nombre_role' => $nombre_role]);
+
+                //Instanciamos el controlador de la clase 'Permisos', para crear un permiso para el nuevo usuario:
+                $permissionController = new PermisosController;
+                //Registramos el permiso del usuario: 
+                $permissionController->store(nombre_role: $nombre_role, permiso: $request->input(key: 'permiso')); 
+                
                 //Retornamos la respuesta: 
                 return ['Register' => true];
 
@@ -49,7 +55,7 @@ class RoleController extends Controller
 
         }else{
             //Retornamos el error: 
-            return ['Register' => false, 'Error' => 'Ya existe en el sistema.'];
+            return ['Register' => false, 'Error' => 'Ya existe ese en el sistema.'];
         }
     }
 
@@ -77,7 +83,7 @@ class RoleController extends Controller
     {
         //En el caso de que el dato contenga caracteres de tipo mayuscula, los convertimos en minuscula. Asi seguimos una nomenclatura estandar: 
         $nombre_role     = strtolower($request->input(key: 'nombre_role'));
-        $new_nombre_permiso = strtolower($request->input(key: 'new_nombre_permiso'));
+        $new_nombre_role = strtolower($request->input(key: 'new_nombre_role'));
 
         //Hacemos la consulta en la DB: 
         $modelRole = Role::where('nombre_role', $nombre_role);
@@ -85,23 +91,46 @@ class RoleController extends Controller
         //Validamos que ese role exista en la DB:
         $validateRole = $modelRole->first();
 
-        //Si existe ese role, hacemos la actualizacion: 
+        //Si existe ese role, procedemos a la actualizacion: 
         if($validateRole){
 
-            try{
+            //Realizamos una nueva consulta a la DB, para validar que el nuevo role no exista:
+            $modelNewRole = Role::where('nombre_role', $new_nombre_role);
 
-                //Hacemos la actualizacion en la DB:
-                $modelRole->update(['nombre_permiso' => $new_nombre_permiso]);
-                //Retornamos la respuesta:
-                return ['Register' => true];
+            //Validamos que no exista ese role en la DB: 
+            $validateNewRole = $modelNewRole->first();
 
-            }catch(Exception $e){
-                //Retornamos el error:
-                return ['Register' => false, 'Error' => $e->getMessage()];
+            //Sino existe ese role, realizamos la actualizacion: 
+            if(!$validateNewRole){
+                
+                try{
+
+                    //Validamos si se requiere actualizar el permiso de ese role: 
+                    if(!empty($request->input(key: 'new_permiso'))){
+                        //Instanciamos el controlador de la clase 'Permisos', para crear un permiso para el nuevo usuario:
+                        $permissionController = new PermisosController;
+                        //Registramos el permiso del usuario: 
+                        $permissionController->update(nombre_role: $nombre_role, new_permiso: $request->input(key: 'new_permiso'));
+                    }
+
+                    //Hacemos la actualizacion en la DB:
+                    $modelRole->update(['nombre_role' => $new_nombre_role]);
+    
+                    //Retornamos la respuesta:
+                    return ['Register' => true];
+    
+                }catch(Exception $e){
+                    //Retornamos el error:
+                    return ['Register' => false, 'Error' => $e->getMessage()];
+                }
+
+            }else{
+                 //Retornamos el error:
+                return ['Register' => false, 'Error' => 'Ya existe ese role en el sistema.'];
             }
         }else{
             //Retornamos el error:
-            return ['Register' => false, 'Error' => 'No existe en el sistema.'];
+            return ['Register' => false, 'Error' => 'No existe ese role en el sistema.'];
         }
     }
 
@@ -128,7 +157,7 @@ class RoleController extends Controller
                 //Validamos si existe el permiso: 
                 $validatePermission = $permissionController->show($nombre_role);
 
-                if($validatePermission){
+                if($validatePermission['Query']){
                     //Realizamos la eliminacion del permiso en la DB: 
                     $permissionController->destroy($nombre_role);
                 }
