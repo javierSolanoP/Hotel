@@ -83,7 +83,7 @@
                 <div class="container-icon">
                     <img class="cancel-icon" src="undraw_cancel_u1it.svg" alt="Icono de error">
                 </div>
-                <p class="error-message"><strong>{{$error['message']}}</strong></p>
+                <p class="error-message"><strong>{{$error}}</strong></p>
             </div>
         </div>
         <br>

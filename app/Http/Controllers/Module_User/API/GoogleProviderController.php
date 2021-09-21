@@ -51,7 +51,9 @@ class GoogleProviderController extends Controller
                 //Si ocurre un error en el cambio de estado de sesion, lo retornamos: 
                 if(!$newSession['register']){
                     //Retornamos el error: 
-                    return ['Login' => false, 'Error' => $newSession['Error']];
+                    $error = $newSession['Error'];
+                    $urlFail = $_SESSION['urlFail'];
+                    return view('error', ['error' => $error, 'urlFail' => $urlFail]);
                 }
 
                 //Si el usuario no tiene URl de su avatar, le asignamos el de su cuenta de 'Gmail':  
@@ -63,7 +65,9 @@ class GoogleProviderController extends Controller
                     //Si ocurre un error en la asignacion de su avatarm lo retornamos: 
                     if(!$avatarUpdate['Register']){
                         //Retornamos el error: 
-                        return ['Login' => false, 'Error' => $avatarUpdate['Error']];
+                        $error = $avatarUpdate['Error'];
+                        $urlFail = $_SESSION['urlFail'];
+                        return view('error', ['error' => $error, 'urlFail' => $urlFail]);
                     }
                 }
 
@@ -71,7 +75,7 @@ class GoogleProviderController extends Controller
 
             }elseif($validateUser['User']['sesion'] == $active){
                 //Retornamos el error:
-                $error = ['message' => 'Este usuario ya inició sesión en el sistema.'];
+                $error = 'Este usuario ya inició sesión en el sistema.';
                 $urlFail = $_SESSION['urlFail'];
                 return view('error', ['error' => $error, 'urlFail' => $urlFail]);
                 
@@ -83,8 +87,10 @@ class GoogleProviderController extends Controller
             }
 
         }else{
-            //Retornamos el error: 
-            return ['Login' => false, $validateUser['Error']];
+            //Retornamos el error:
+            $error = $validateUser['Error'];
+            $urlFail = $_SESSION['urlFail'];
+            return view('error', ['error' => $error, 'urlFail' => $urlFail]); 
         }
     }
 }
